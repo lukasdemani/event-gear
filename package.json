@@ -14,6 +14,9 @@
     "domains/*"
   ],
   "scripts": {
+    "dev": "pnpm dev:setup && concurrently --names api,web --prefix-colors cyan,magenta \"pnpm --filter @eventgear/api dev\" \"pnpm --filter @eventgear/web dev\"",
+    "dev:setup": "docker compose up -d && pnpm dev:env && pnpm --filter @eventgear/db seed",
+    "dev:env": "[ -f apps/api/.env.local ] || cp apps/api/.env.local.example apps/api/.env.local && [ -f apps/web/.env.local ] || cp apps/web/.env.local.example apps/web/.env.local",
     "build": "pnpm -r build",
     "typecheck": "pnpm -r typecheck",
     "lint": "pnpm -r lint",
@@ -28,6 +31,7 @@
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
+    "concurrently": "^9.2.1",
     "prettier": "^3.0.0",
     "typescript": "^5.5.0"
   }

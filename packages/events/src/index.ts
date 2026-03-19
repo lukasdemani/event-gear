@@ -15,6 +15,7 @@ export { BUS_NAMES } from './bus-names.js';
 export type {
   EventGearEvent,
   EventDetail,
+  EventName,
   // Inventory events
   EquipmentCreatedPayload,
   EquipmentUpdatedPayload,

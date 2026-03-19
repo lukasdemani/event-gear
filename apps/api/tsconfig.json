@@ -1,8 +1,28 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "outDir": "dist",
-    "rootDir": "src"
+    "noEmit": true,
+    "baseUrl": "../..",
+    "paths": {
+      "@eventgear/core": ["packages/core/src/index.ts"],
+      "@eventgear/db": ["packages/db/src/index.ts"],
+      "@eventgear/events": ["packages/events/src/index.ts"],
+      "@eventgear/config": ["packages/config/src/index.ts"],
+      "@eventgear/inventory": ["domains/inventory/index.ts"]
+    }
   },
-  "include": ["src"]
+  "include": [
+    "src",
+    "../../domains/inventory",
+    "../../packages/core/src",
+    "../../packages/db/src",
+    "../../packages/events/src",
+    "../../packages/config/src"
+  ],
+  "exclude": [
+    "node_modules",
+    "../../**/dist",
+    "../../**/__tests__",
+    "../../**/*.test.ts"
+  ]
 }

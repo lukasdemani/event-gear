@@ -28,3 +28,13 @@ export {
   MaintenanceType,
   MaintenanceStatus,
 } from './types.js';
+export {
+  createCategorySchema,
+  createEquipmentSchema,
+  updateEquipmentSchema,
+  createStockUnitSchema,
+  updateStockUnitStatusSchema,
+  createMaintenanceRecordSchema,
+  completeMaintenanceSchema,
+  paginationSchema,
+} from './validators.js';

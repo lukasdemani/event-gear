@@ -1,0 +1,49 @@
+## Dependencies
+node_modules/
+.pnpm-store/
+
+## Build outputs
+dist/
+build/
+.next/
+out/
+*.tsbuildinfo
+
+## Environment files
+.env
+.env.local
+.env.*.local
+
+## Test & Coverage
+coverage/
+.nyc_output/
+
+## IDE
+.idea/
+.vscode/settings.json
+*.swp
+*.swo
+.DS_Store
+
+## Terraform
+**/.terraform/
+*.tfstate
+*.tfstate.backup
+*.tfvars
+!*.tfvars.example
+.terraform.lock.hcl
+crash.log
+override.tf
+override.tf.json
+
+## AWS SAM
+.aws-sam/
+samconfig.toml
+
+## Logs
+*.log
+logs/
+
+## Misc
+*.zip
+*.tar.gz

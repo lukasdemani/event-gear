@@ -1,0 +1,34 @@
+{
+  "name": "eventgear",
+  "version": "0.1.0",
+  "private": true,
+  "description": "B2B equipment rental platform for large live events",
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "packageManager": "pnpm@9.0.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*",
+    "domains/*"
+  ],
+  "scripts": {
+    "build": "pnpm -r build",
+    "typecheck": "pnpm -r typecheck",
+    "lint": "pnpm -r lint",
+    "format": "prettier --write \"**/*.{ts,tsx,json,md}\" --ignore-path .gitignore",
+    "test": "pnpm -r test",
+    "test:coverage": "pnpm -r test:coverage",
+    "test:integration": "pnpm -r test:integration",
+    "test:watch": "pnpm -r test:watch",
+    "clean": "pnpm -r clean && rm -rf node_modules",
+    "db:seed": "pnpm --filter @eventgear/db seed",
+    "deploy:dev": "pnpm -r deploy:dev"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "prettier": "^3.0.0",
+    "typescript": "^5.5.0"
+  }
+}

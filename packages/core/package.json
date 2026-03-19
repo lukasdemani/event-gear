@@ -7,10 +7,12 @@
   "exports": {
     ".": {
       "import": "./dist/index.js",
+      "default": "./dist/index.js",
       "types": "./dist/index.d.ts"
     },
     "./test-factories": {
       "import": "./dist/test-factories/index.js",
+      "default": "./dist/test-factories/index.js",
       "types": "./dist/test-factories/index.d.ts"
     }
   },

@@ -10,8 +10,10 @@ import Badge from '@/components/ui/Badge';
 import Spinner from '@/components/ui/Spinner';
 import ErrorMessage from '@/components/ui/ErrorMessage';
 import StockUnitTable from '@/features/inventory/stock-units/StockUnitTable';
+import MaintenanceHistoryTable from '@/features/inventory/maintenance/MaintenanceHistoryTable';
 import { getEquipment } from '@/lib/api-client';
 import { useStockUnits } from '../hooks/use-stock-units';
+import { useMaintenance } from '../hooks/use-maintenance';
 import type { Equipment } from '@/lib/types';
 
 type Tab = 'units' | 'maintenance';
@@ -26,6 +28,7 @@ export default function EquipmentDetailPage() {
 
   const equipmentId = id ?? '';
   const { units, loading: unitsLoading, error: unitsError, createUnit, updateStatus } = useStockUnits(equipmentId);
+  const { records, loading: maintLoading, error: maintError, scheduleRecord, completeRecord } = useMaintenance(equipmentId);
 
   useEffect(() => {
     if (!equipmentId) return;
@@ -123,9 +126,19 @@ export default function EquipmentDetailPage() {
           )}
 
           {activeTab === 'maintenance' && (
-            <div className="text-sm text-gray-500 py-4">
-              Maintenance history coming in the next commit.
-            </div>
+            <>
+              {maintLoading && <div className="flex justify-center py-8"><Spinner /></div>}
+              {!maintLoading && maintError !== undefined && <ErrorMessage message={maintError} />}
+              {!maintLoading && maintError === undefined && (
+                <MaintenanceHistoryTable
+                  records={records}
+                  equipmentId={equipmentId}
+                  units={units}
+                  scheduleRecord={scheduleRecord}
+                  completeRecord={completeRecord}
+                />
+              )}
+            </>
           )}
         </div>
       </div>

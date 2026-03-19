@@ -10,6 +10,7 @@
  *   Requires DynamoDB Local at DYNAMODB_ENDPOINT (see .env.local).
  */
 import express, { type Request, type Response, type NextFunction } from 'express';
+import cors from 'cors';
 import {
   InventoryRepository,
   InventoryService,
@@ -93,6 +94,7 @@ function wrap(fn: AsyncHandler): (req: Request, res: Response, next: NextFunctio
 // ---------------------------------------------------------------------------
 
 const app = express();
+app.use(cors({ origin: 'http://localhost:5173' }));
 app.use(express.json());
 
 // ── Categories ───────────────────────────────────────────────────────────────

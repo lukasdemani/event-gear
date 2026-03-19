@@ -15,7 +15,7 @@
     "typecheck": "tsc --noEmit",
     "test": "jest",
     "test:integration": "INTEGRATION=true jest --testPathPattern=integration",
-    "seed": "tsx src/seed.ts",
+    "seed": "tsx --env-file ../../apps/api/.env.local src/seed.ts",
     "clean": "rm -rf dist"
   },
   "dependencies": {

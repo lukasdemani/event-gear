@@ -44,7 +44,15 @@ samconfig.toml
 *.log
 logs/
 
+## SSH keys
+*.pem
+*.key
+id_rsa*
+id_ed25519*
+id_ecdsa*
+
 ## Misc
 *.zip
 *.tar.gz
 .superpowers/
+docs/superpowers/

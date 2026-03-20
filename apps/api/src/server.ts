@@ -28,6 +28,7 @@ import type { Result } from '@eventgear/core';
 import type { AppError } from '@eventgear/core';
 import type { EventPublisher } from '@eventgear/events';
 import type { EventName } from '@eventgear/events';
+import { createAssistantRoute } from './assistant/route.js';
 
 // ---------------------------------------------------------------------------
 // Local EventPublisher — logs instead of calling AWS EventBridge
@@ -96,6 +97,9 @@ function wrap(fn: AsyncHandler): (req: Request, res: Response, next: NextFunctio
 const app = express();
 app.use(cors({ origin: 'http://localhost:5173' }));
 app.use(express.json());
+
+// ── Assistant ────────────────────────────────────────────────────────────────
+app.post('/assistant/chat', wrap(createAssistantRoute(service)));
 
 // ── Categories ───────────────────────────────────────────────────────────────
 

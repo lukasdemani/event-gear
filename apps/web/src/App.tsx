@@ -15,6 +15,7 @@ import CategoriesPage from '@/features/inventory/categories/CategoriesPage';
 import EquipmentListPage from '@/features/inventory/equipment/EquipmentListPage';
 import EquipmentDetailPage from '@/features/inventory/equipment/EquipmentDetailPage';
 import NotFoundPage from '@/pages/NotFoundPage';
+import AssistantButton from '@/features/assistant/AssistantButton';
 
 export default function App() {
   return (
@@ -28,6 +29,7 @@ export default function App() {
           <Route path="*" element={<NotFoundPage />} />
         </Route>
       </Routes>
+      <AssistantButton />
     </BrowserRouter>
   );
 }

@@ -1,18 +1,36 @@
 # EventGear — B2B Equipment Rental Platform
 
-Production-grade equipment rental management for large live events.
-Manages the full lifecycle: **Quote → Reservation → Dispatch → Return → Billing**.
+> **Work in progress.** The Inventory domain is fully implemented. Reservations, Logistics, Billing, and production infra are planned but not yet built.
+
+B2B SaaS platform for equipment rental companies serving large live events.
+Manages the full rental lifecycle: **Quote → Reservation → Dispatch → Return → Billing**.
 
 ## Quick Start
 
 ```bash
-# Prerequisites: Node.js 20+, pnpm 9+, Docker (for local DynamoDB), AWS CLI
+# Prerequisites: Node.js 20+, pnpm 9+, Docker
 
 pnpm install
-docker run -d -p 8000:8000 amazon/dynamodb-local
-pnpm db:seed
-pnpm --filter @eventgear/web dev
+pnpm dev          # starts DynamoDB (Docker), seeds data, API server + web app
 ```
+
+Open [http://localhost:5173](http://localhost:5173).
+
+**Required env var** — copy the example and add your Anthropic API key to enable the in-app assistant:
+
+```bash
+cp apps/api/.env.local.example apps/api/.env.local
+# edit apps/api/.env.local → set ANTHROPIC_API_KEY=sk-ant-...
+```
+
+## What's Built
+
+| Feature | Status |
+|---|---|
+| Inventory — categories, equipment, stock units, maintenance | Done |
+| In-app conversational assistant (Claude API + tool use) | Done |
+| Reservations, Logistics, Billing domains | Planned |
+| Production infra (Lambda, API Gateway, CloudFront, Terraform) | Planned |
 
 ## Documentation
 
@@ -26,22 +44,22 @@ pnpm --filter @eventgear/web dev
 ```
 eventgear/
 ├── apps/
-│   ├── web/          # React + Vite frontend (S3/CloudFront)
-│   └── api/          # Lambda handler entry points
+│   ├── web/          # React + Vite frontend
+│   └── api/          # Express dev server (production target: Lambda)
 ├── packages/
 │   ├── core/         # Shared domain models, DTOs, errors, test factories
 │   ├── db/           # DynamoDB client, repository base, single-table schema
 │   ├── events/       # EventBridge publisher, typed event contracts
-│   ├── ai/           # Bedrock Agent client, RAG utilities
+│   ├── ai/           # AI utilities
 │   └── config/       # Env vars, constants, feature flags
 ├── domains/
-│   ├── inventory/    # Equipment catalog, stock units, conditions
-│   ├── reservations/ # Booking lifecycle, conflict detection
-│   ├── logistics/    # Dispatch, field teams, returns
-│   ├── billing/      # Quotes, invoices, payments
-│   └── ai-assistant/ # Bedrock Agent surface, natural language ops
+│   ├── inventory/    # Equipment catalog, stock units, conditions ✅
+│   ├── reservations/ # Booking lifecycle, conflict detection (planned)
+│   ├── logistics/    # Dispatch, field teams, returns (planned)
+│   ├── billing/      # Quotes, invoices, payments (planned)
+│   └── ai-assistant/ # Natural language ops (planned)
 ├── infra/
-│   └── terraform/    # All infrastructure as code
+│   └── terraform/    # Infrastructure as code (planned)
 └── docs/
     ├── adr/          # Architecture Decision Records
     ├── access-patterns.md
@@ -52,24 +70,12 @@ eventgear/
 
 | Layer | Technology |
 |---|---|
-| Frontend | React 18, Vite, TypeScript, hosted on S3+CloudFront |
-| Backend | AWS Lambda (Node.js 20.x), API Gateway HTTP API |
-| Database | DynamoDB (single-table design) |
-| Eventing | EventBridge (event-driven bounded contexts) |
-| AI | AWS Bedrock Agents + Knowledge Bases (RAG) |
-| IaC | Terraform (modules pattern, S3+DynamoDB remote state) |
-| Testing | Jest (unit + integration) |
-| CI/CD | GitHub Actions |
-
-## Bounded Contexts
-
-| Domain | Responsibility |
-|---|---|
-| **Inventory** | Equipment catalog, stock levels, condition tracking, maintenance |
-| **Reservations** | Booking lifecycle, conflict detection, availability calendar |
-| **Logistics** | Dispatch planning, field teams, return workflows |
-| **Billing** | Quotes, invoices, payment tracking, pricing rules |
-| **AI Assistant** | Natural language interface via Bedrock Agents + RAG |
+| Frontend | React 18, Vite, TypeScript, Tailwind CSS |
+| Backend (dev) | Express.js (Node.js 20.x) |
+| Backend (prod target) | AWS Lambda + API Gateway HTTP API |
+| Database | DynamoDB Local (dev) / AWS DynamoDB (prod) |
+| AI Assistant | Claude API (`claude-opus-4-6`) with tool use |
+| IaC | Terraform (planned) |
 
 ## Development Workflow
 

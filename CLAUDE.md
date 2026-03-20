@@ -876,6 +876,10 @@ pnpm --filter @eventgear/inventory test  # single domain
 
 ### Local Development
 ```bash
+# Start everything (DynamoDB + seed + API + Web) in one command
+pnpm dev
+
+# Or step by step:
 # Start local DynamoDB
 docker run -p 8000:8000 amazon/dynamodb-local
 
@@ -924,7 +928,34 @@ pnpm --filter @eventgear/web deploy:dev
 
 ---
 
-## 14. Glossary
+## 14. Conversational Assistant
+
+The in-app assistant lets users manage inventory using natural language via a floating chat button (bottom-right corner of the UI).
+
+### Architecture
+- **Entry point:** `POST /assistant/chat` on the Express dev server (`apps/api/src/assistant/route.ts`)
+- **Request shape:** `{ message: string, history: ChatMessage[] }`
+- **Response shape:** `{ data: { reply: string } }` or `{ error: { code, message } }`
+- **Brain:** Claude API (`claude-opus-4-6`) with 12 tool definitions mapped to `InventoryService` methods (`apps/api/src/assistant/chat.ts`)
+- **Tools:** Defined in `apps/api/src/assistant/tools.ts` — covers all inventory CRUD + maintenance
+- **Guardrails:** `apps/api/src/assistant/guardrails.ts` — prompt injection pattern detection + `bad-words` offensive content filter; rejected messages return HTTP 422
+- **Frontend:** `apps/web/src/features/assistant/` — `AssistantButton.tsx` (floating button + overlay), `ChatWindow.tsx` (message list + input), `api.ts` (fetch wrapper)
+
+### Required env var
+Add to `apps/api/.env.local`:
+```
+ANTHROPIC_API_KEY=sk-ant-...
+```
+
+### Security notes
+- The API key never leaves the server — the browser calls `/assistant/chat`, not the Claude API directly
+- History is capped at the last 20 turns server-side to prevent context stuffing
+- All input passes through `checkInput()` before reaching Claude — max 2000 chars, injection pattern denylist, profanity filter
+- The system prompt instructs Claude to stay scoped to inventory tasks only
+
+---
+
+## 15. Glossary
 
 | Term | Definition |
 |---|---|

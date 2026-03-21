@@ -4,7 +4,7 @@
  */
 import { useState, useRef, useEffect } from 'react';
 import Spinner from '@/components/ui/Spinner';
-import { sendMessage } from './api';
+import { streamMessage } from './api';
 import type { Message } from './types';
 
 interface ChatWindowProps {
@@ -40,7 +40,11 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
     setError(undefined);
 
     try {
-      const { reply } = await sendMessage(text, messages);
+      let reply = '';
+      for await (const event of streamMessage(text, messages)) {
+        if (event.type === 'token') reply += event.text;
+        if (event.type === 'error') throw new Error(event.message);
+      }
       setMessages([...next, { role: 'assistant', content: reply }]);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong');

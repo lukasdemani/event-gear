@@ -5,7 +5,7 @@
  * @inputs  Raw user message string
  * @outputs { safe: true } | { safe: false; reason: string }
  */
-import Filter from 'bad-words';
+import { Filter } from 'bad-words';
 
 const offensiveFilter = new Filter();
 

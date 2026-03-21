@@ -99,7 +99,7 @@ app.use(cors({ origin: 'http://localhost:5173' }));
 app.use(express.json());
 
 // ── Assistant ────────────────────────────────────────────────────────────────
-app.post('/assistant/chat', wrap(createAssistantRoute(service)));
+app.post('/assistant/chat', createAssistantRoute(service));
 
 // ── Categories ───────────────────────────────────────────────────────────────
 

@@ -9,6 +9,7 @@ import type { EmitFn, StreamEvent } from '../chat';
 const mockCreate = jest.fn();
 
 jest.mock('@anthropic-ai/sdk', () => ({
+  __esModule: true,
   default: jest.fn().mockImplementation(() => ({
     messages: { create: mockCreate },
   })),

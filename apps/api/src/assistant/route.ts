@@ -75,10 +75,17 @@ export function createAssistantRoute(service: InventoryService) {
       }
     };
 
-    req.on('close', () => {
-      closed = true;
-      controller.abort();
-      endResponse();
+    // Use res.on('close') not req.on('close') — the request stream emits 'close'
+    // as soon as the request body is consumed by express.json(), which would
+    // abort the Claude API call before it has a chance to respond.
+    // The response 'close' only fires on true client disconnect.
+    // The `ended` guard prevents this from misfiring when we call res.end() normally.
+    res.on('close', () => {
+      if (!ended) {
+        closed = true;
+        ended = true;
+        controller.abort();
+      }
     });
 
     const emit: EmitFn = (event: StreamEvent) => {

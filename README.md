@@ -5,6 +5,10 @@
 B2B SaaS platform for equipment rental companies serving large live events.
 Manages the full rental lifecycle: **Quote → Reservation → Dispatch → Return → Billing**.
 
+## Demo
+
+![EventGear conversational assistant — natural language inventory management](docs/agent-demo.gif)
+
 ## Quick Start
 
 ```bash

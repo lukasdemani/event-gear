@@ -1,16 +1,20 @@
 /**
  * @file api.ts
- * @purpose Send a message to the assistant API and return the reply
+ * @purpose Stream assistant SSE events from POST /assistant/chat
  *
- * @ai-notes __API_BASE_URL__ is a Vite `define` constant declared in vite.config.ts
- *   and typed in src/vite-env.d.ts — no extra configuration needed.
+ * @ai-notes __API_BASE_URL__ is a Vite `define` constant declared in vite.config.ts.
+ *   Uses fetch (not EventSource) because the endpoint is POST with a JSON body.
+ *   EventSource only supports GET — fetch ReadableStream is the correct approach.
+ *   eventsource-parser handles partial chunks, multi-line data, and UTF-8 edge cases.
+ *   Dispatch is on data.type (JSON payload field), not the SSE event: line.
  */
-import type { Message } from './types';
+import { createParser } from 'eventsource-parser';
+import type { Message, StreamEvent } from './types';
 
-export async function sendMessage(
+export async function* streamMessage(
   message: string,
   history: Message[],
-): Promise<{ reply: string }> {
+): AsyncGenerator<StreamEvent> {
   const base = __API_BASE_URL__ || 'http://localhost:3001';
   const res = await fetch(`${base}/assistant/chat`, {
     method: 'POST',
@@ -18,13 +22,29 @@ export async function sendMessage(
     body: JSON.stringify({ message, history }),
   });
 
-  const json = (await res.json()) as unknown;
-
   if (!res.ok) {
-    const err = json as { error?: { message?: string } };
+    const err = (await res.json()) as { error?: { message?: string } };
     throw new Error(err.error?.message ?? `HTTP ${res.status}`);
   }
 
-  const body = json as { data: { reply: string } };
-  return body.data;
+  const reader = res.body!.getReader();
+  const decoder = new TextDecoder();
+  // Array accumulates events — handles multiple events arriving in one TCP chunk
+  const pending: StreamEvent[] = [];
+
+  const parser = createParser({
+    onEvent(event) {
+      pending.push(JSON.parse(event.data) as StreamEvent);
+    },
+  });
+
+  while (true) {
+    const { done, value } = await reader.read();
+    // stream: !done flushes buffered multi-byte UTF-8 sequences on the final read
+    parser.feed(decoder.decode(value, { stream: !done }));
+    while (pending.length > 0) {
+      yield pending.shift()!;
+    }
+    if (done) break;
+  }
 }

@@ -57,7 +57,7 @@ CLAUDE.md §4 defines `GSI2PK = EntityType` (e.g., `EQUIPMENT`). In a multi-tena
 
 **New GSI2PK pattern**: `TENANT#{tenantId}#ENTITY#{type}` (e.g., `TENANT#01J9...#ENTITY#EQUIPMENT`)
 
-Access patterns AP-03, AP-21, AP-22 updated to use this pattern. `DYNAMO_KEY_FIELDS` in `packages/db` must add the new `GSI2PK`/`GSI2SK` field names so `stripKeys` removes them from domain objects.
+The compound value is stored under the **existing `EntityType` attribute name** — no attribute rename, no Terraform GSI definition change. `EntityType` currently holds `"EQUIPMENT"`, `"STOCKUNIT"`, etc.; after migration it holds `"TENANT#01J9...#ENTITY#EQUIPMENT"`. Since `EntityType` is already in `DYNAMO_KEY_FIELDS` in `base-repository.ts`, `stripKeys` continues to strip it without changes to shared packages. Access patterns AP-03, AP-21, AP-22 updated to query the compound value.
 
 ### GSI3 Design Under Multi-tenancy
 
@@ -284,7 +284,38 @@ On `confirm`, for each `ReservationItem`:
 
 ### EventBridge
 
-**Event payload note**: All published event payloads must include `tenantId` so consuming domains (e.g. inventory marking units reserved) can construct tenant-prefixed DynamoDB keys without parsing the event source. This applies to all 5 events below.
+**Event payload note**: All published event payloads must include `tenantId` so consuming domains can construct tenant-prefixed DynamoDB keys. CLAUDE.md §5 interfaces predate multi-tenancy and must be updated as part of Sub-project 2. The authoritative updated interfaces are below — these supersede CLAUDE.md §5 for these two payloads:
+
+```typescript
+// reservations.reservation.confirmed (supersedes CLAUDE.md §5)
+interface ReservationConfirmedPayload {
+  tenantId: string;           // NEW — required for consumer key construction
+  reservationId: string;
+  customerId: string;
+  startDate: string;
+  endDate: string;
+  items: Array<{
+    reservationItemId: string;
+    equipmentId: string;
+    unitId: string;
+    quantity: number;
+  }>;
+  totalAmount: number;
+}
+
+// inventory.stockunit.availability-changed (supersedes CLAUDE.md §5)
+interface StockUnitAvailabilityChangedPayload {
+  tenantId: string;           // NEW — required for consumer key construction
+  unitId: string;
+  equipmentId: string;
+  previousStatus: StockUnitStatus;
+  newStatus: StockUnitStatus;
+  reason: 'RESERVATION' | 'MAINTENANCE' | 'DAMAGE' | 'MANUAL';
+  referenceId?: string;
+}
+```
+
+CLAUDE.md §5 should be updated to match these interfaces when Sub-project 2 is implemented.
 
 **Publishes:**
 - `reservations.reservation.created`

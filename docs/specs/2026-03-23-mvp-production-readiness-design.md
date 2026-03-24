@@ -45,17 +45,27 @@ Every primary key and GSI key prefixed with the tenant namespace:
 | AvailabilityBlock | `UNIT#{unitId}` | `TENANT#{tenantId}#UNIT#{unitId}` |
 | Tenant | — | `TENANT#{tenantId}` |
 
-GSI1/GSI2 keys follow the same prefix pattern.
+GSI1 keys follow the same prefix pattern. GSI2 and GSI3 require special handling (see below).
 
 **Migration**: existing inventory repository key builders updated to accept and embed `tenantId`; all new domains built with tenant prefix from the start. Local seed data updated to include a default dev tenant.
 
+The inventory migration specifically requires updating GSI3 key builders (AP-06 `Status=AVAILABLE`, AP-10, AP-11) and GSI2 key builders (AP-03, AP-21) to use the new tenant-prefixed patterns below.
+
+### GSI2 Design Under Multi-tenancy
+
+CLAUDE.md §4 defines `GSI2PK = EntityType` (e.g., `EQUIPMENT`). In a multi-tenant table, bare `EntityType=EQUIPMENT` returns all tenants' equipment.
+
+**New GSI2PK pattern**: `TENANT#{tenantId}#ENTITY#{type}` (e.g., `TENANT#01J9...#ENTITY#EQUIPMENT`)
+
+Access patterns AP-03, AP-21, AP-22 updated to use this pattern. `DYNAMO_KEY_FIELDS` in `packages/db` must add the new `GSI2PK`/`GSI2SK` field names so `stripKeys` removes them from domain objects.
+
 ### GSI3 Design Under Multi-tenancy
 
-CLAUDE.md §4 defines `GSI3PK = Status`. In a multi-tenant table, `Status = "CONFIRMED"` would mix all tenants' data. Fix:
+CLAUDE.md §4 defines `GSI3PK = Status`. In a multi-tenant table, `Status = "CONFIRMED"` would mix all tenants' data.
 
 **New GSI3PK pattern**: `TENANT#{tenantId}#STATUS` (e.g., `TENANT#01J9...#CONFIRMED`)
 
-This allows queries like "list all CONFIRMED reservations for tenant X sorted by date" without cross-tenant leakage. All domains using GSI3 must adopt this pattern — including the updated inventory domain.
+This allows queries like "list all CONFIRMED reservations for tenant X sorted by date" without cross-tenant leakage. All domains using GSI3 must adopt this pattern — including the updated inventory domain (AP-06, AP-10, AP-11).
 
 ### Tenant DynamoDB Key Pattern
 
@@ -124,6 +134,16 @@ export interface AuthContext {
 }
 ```
 
+### TenantRepository
+
+Tenant records are read and written by both the auth flow (signup provisioning) and the billing domain (plan/status updates). `TenantRepository` lives in `packages/auth/` since the Tenant entity is foundational to auth:
+
+```
+packages/auth/src/tenant-repository.ts  — CRUD for Tenant records, GSI1 lookup by stripeCustomerId
+```
+
+The billing domain imports `TenantRepository` from `@eventgear/auth` rather than owning its own copy. This keeps `Tenant` as a single source of truth.
+
 ### Frontend Auth
 - `/login` and `/signup` pages (custom UI, no Cognito hosted redirect)
 - `AuthContext` (React Context) holds decoded user, role, tenantId, and raw token
@@ -137,6 +157,7 @@ export interface AuthContext {
 packages/auth/src/jwks-client.ts
 packages/auth/src/jwt.ts
 packages/auth/src/types.ts
+packages/auth/src/tenant-repository.ts
 packages/auth/src/index.ts
 packages/auth/package.json
 packages/auth/tsconfig.json
@@ -167,7 +188,7 @@ type ReservationStatus = 'DRAFT' | 'QUOTED' | 'CONFIRMED' | 'ACTIVE' | 'COMPLETE
 
 interface Reservation {
   id: string;               // ULID
-  tenantId: string;
+  tenantId: string;         // root aggregate — carries tenantId for event payloads and app-layer filtering
   customerId: string;
   startDate: string;        // ISO date "YYYY-MM-DD"
   endDate: string;
@@ -185,7 +206,9 @@ interface ReservationItem {
   unitId: string;
   quantity: number;
   dailyRateSnapshot: number; // rate locked at booking time, not live
-  // tenantId encoded in DynamoDB keys, not stored as a domain field
+  // tenantId NOT stored as a domain field — it is a child entity always accessed through
+  // its parent Reservation (which carries tenantId). Tenant isolation is enforced via
+  // the PK prefix TENANT#{tenantId}#RESERVATION#{reservationId}.
 }
 
 interface AvailabilityBlock {
@@ -261,9 +284,11 @@ On `confirm`, for each `ReservationItem`:
 
 ### EventBridge
 
+**Event payload note**: All published event payloads must include `tenantId` so consuming domains (e.g. inventory marking units reserved) can construct tenant-prefixed DynamoDB keys without parsing the event source. This applies to all 5 events below.
+
 **Publishes:**
 - `reservations.reservation.created`
-- `reservations.reservation.confirmed` → inventory domain marks units reserved
+- `reservations.reservation.confirmed` → inventory domain marks units reserved (payload includes `tenantId`)
 - `reservations.reservation.cancelled` → inventory domain releases units
 - `reservations.reservation.modified` — fires on `PUT /reservations/:id/items`
 - `reservations.conflict.detected`
@@ -361,14 +386,15 @@ Webhook handler looks up tenant by `stripeCustomerId` using `GSI1PK = STRIPE_CUS
 
 ```
 domains/billing/SPEC.md
-domains/billing/types.ts
-domains/billing/stripe-client.ts
-domains/billing/service.ts
-domains/billing/webhook-handler.ts
-domains/billing/handler.ts
+domains/billing/types.ts              — Plan enum, plan limits config
+domains/billing/stripe-client.ts      — Stripe SDK wrapper
+domains/billing/service.ts            — checkout, portal, limit enforcement (imports TenantRepository from @eventgear/auth)
+domains/billing/webhook-handler.ts    — Stripe event processing (imports TenantRepository from @eventgear/auth)
+domains/billing/handler.ts            — Lambda handler
 domains/billing/__tests__/service.test.ts
 domains/billing/__tests__/handler.test.ts
 domains/billing/index.ts
+# Note: no billing/repository.ts — Tenant DynamoDB access is handled by TenantRepository in packages/auth
 infra/terraform/modules/secrets/main.tf
 infra/terraform/modules/secrets/variables.tf
 infra/terraform/modules/secrets/outputs.tf

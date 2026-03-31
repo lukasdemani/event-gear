@@ -1,6 +1,6 @@
 # EventGear — B2B Equipment Rental Platform
 
-> **Work in progress.** The Inventory domain is fully implemented. Reservations, Logistics, Billing, and production infra are planned but not yet built.
+> **Work in progress.** Inventory domain + full React UI are implemented. Auth, Reservations, and SaaS Billing are planned with implementation specs and plans written.
 
 B2B SaaS platform for equipment rental companies serving large live events.
 Manages the full rental lifecycle: **Quote → Reservation → Dispatch → Return → Billing**.
@@ -32,13 +32,19 @@ cp apps/api/.env.local.example apps/api/.env.local
 | Feature | Status |
 |---|---|
 | Inventory — categories, equipment, stock units, maintenance | Done |
+| React UI — full inventory management (categories, equipment, stock units, maintenance) | Done |
 | In-app conversational assistant (Claude API + tool use) | Done |
-| Reservations, Logistics, Billing domains | Planned |
+| Auth + multi-tenancy (Cognito, DynamoDB tenant prefix, Lambda authorizer) | Planned — spec + plan written |
+| Reservations domain — booking lifecycle, conflict detection | Planned — spec + plan written |
+| SaaS Billing — Stripe subscription management | Planned — spec + plan written |
+| Logistics domain | Planned |
 | Production infra (Lambda, API Gateway, CloudFront, Terraform) | Planned |
 
 ## Documentation
 
 - **[CLAUDE.md](./CLAUDE.md)** — Full architecture context, schema, conventions (start here)
+- **[docs/specs/](./docs/specs/)** — Feature specs (MVP production readiness)
+- **[docs/plans/](./docs/plans/)** — Implementation plans (auth, reservations, billing)
 - **[docs/access-patterns.md](./docs/access-patterns.md)** — DynamoDB access patterns
 - **[docs/event-catalog.md](./docs/event-catalog.md)** — EventBridge event schemas
 - **[docs/adr/](./docs/adr/)** — Architecture Decision Records
@@ -54,6 +60,7 @@ eventgear/
 │   ├── core/         # Shared domain models, DTOs, errors, test factories
 │   ├── db/           # DynamoDB client, repository base, single-table schema
 │   ├── events/       # EventBridge publisher, typed event contracts
+│   ├── auth/         # JWT verification, TenantRepository (planned)
 │   ├── ai/           # AI utilities
 │   └── config/       # Env vars, constants, feature flags
 ├── domains/
@@ -65,6 +72,8 @@ eventgear/
 ├── infra/
 │   └── terraform/    # Infrastructure as code (planned)
 └── docs/
+    ├── specs/        # Feature specs
+    ├── plans/        # Implementation plans
     ├── adr/          # Architecture Decision Records
     ├── access-patterns.md
     └── event-catalog.md
@@ -79,6 +88,8 @@ eventgear/
 | Backend (prod target) | AWS Lambda + API Gateway HTTP API |
 | Database | DynamoDB Local (dev) / AWS DynamoDB (prod) |
 | AI Assistant | Claude API (`claude-opus-4-6`) with tool use |
+| Auth | AWS Cognito + Lambda authorizer (planned) |
+| SaaS Billing | Stripe subscriptions (planned) |
 | IaC | Terraform (planned) |
 
 ## Development Workflow
